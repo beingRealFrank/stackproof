@@ -1,0 +1,97 @@
+{
+ "bash_block": [
+  {
+   "re": "git\\s+push\\b.*(\\s-f\\b|--force(?!-with-lease))",
+   "why": "force-pushing rewrites shared history."
+  },
+  {
+   "re": "git\\s+(commit|push|merge)\\b.*--no-verify",
+   "why": "--no-verify skips the project's own checks."
+  },
+  {
+   "re": "\\brm\\s+-\\S*r\\S*\\s+(/|~/?|\\$HOME/?)(\\s|$)",
+   "why": "this deletes a root or home directory."
+  },
+  {
+   "re": "(curl|wget)\\b[^|;&]*\\|\\s*(sudo\\s+)?(ba|z)?sh\\b",
+   "why": "piping a downloaded script into a shell runs unreviewed code."
+  },
+  {
+   "re": "git\\s+reset\\s+--hard\\s+(origin|upstream)/",
+   "why": "this discards local commits and changes."
+  },
+  {
+   "re": "supabase\\s+db\\s+reset\\b.*(--linked|--db-url)",
+   "why": "this wipes the remote database."
+  },
+  {
+   "re": "supabase\\s+db\\s+push\\b",
+   "why": "this applies migrations to the linked (often production) project; ask the user."
+  },
+  {
+   "re": "supabase\\s+migration\\s+(repair|squash)\\b.*--linked",
+   "why": "this rewrites remote migration history."
+  },
+  {
+   "re": "(echo|printf|cat|env|printenv)\\b.*SERVICE_ROLE",
+   "why": "this prints the Supabase service-role key."
+  },
+  {
+   "re": "vercel\\b.*--prod\\b",
+   "why": "this deploys to production; ask the user."
+  }
+ ],
+ "path_block": [
+  {
+   "globs": [
+    "supabase/migrations/*.sql",
+    "*/supabase/migrations/*.sql"
+   ],
+   "only_if_tracked": true,
+   "why": "this migration is committed and may already be applied; create a new one with supabase migration new."
+  },
+  {
+   "globs": [
+    ".env",
+    ".env.*",
+    "*/.env",
+    "*/.env.*"
+   ],
+   "except": [
+    "*.example",
+    "*.sample",
+    "*.template"
+   ],
+   "why": "env files hold secrets; ask the user."
+  },
+  {
+   "globs": [
+    "*database.types.ts",
+    "*/supabase/types.ts"
+   ],
+   "why": "this file is generated; run supabase gen types instead."
+  },
+  {
+   "globs": [
+    "node_modules/*",
+    "*/node_modules/*",
+    ".next/*"
+   ],
+   "why": "dependencies and build output."
+  }
+ ],
+ "content_block": [
+  {
+   "globs": [
+    "*.ts",
+    "*.tsx",
+    "*.js",
+    "*.jsx",
+    "*.mjs"
+   ],
+   "re": "NEXT_PUBLIC_\\w*(SERVICE_ROLE|SECRET)",
+   "why": "a NEXT_PUBLIC_ variable ships to the browser, so a server secret must never use that prefix."
+  }
+ ],
+ "format": []
+}

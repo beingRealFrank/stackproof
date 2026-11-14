@@ -1,0 +1,19 @@
+{
+  "name": "nextjs-supabase-kit-lite",
+  "displayName": "Stackproof Next.js + Supabase kit (lite)",
+  "version": "1.0.0",
+  "description": "Free Next.js + Supabase starter for Claude Code: an init skill, an RLS policy skill, a reviewer subagent and a guard hook.",
+  "author": {
+    "name": "Frank Gilroy",
+    "email": "frankjgilroy+stackproof@gmail.com",
+    "url": "https://beingrealfrank.github.io/stackproof/"
+  },
+  "homepage": "https://github.com/beingRealFrank/stackproof",
+  "license": "MIT",
+  "keywords": [
+    "nextjs",
+    "supabase",
+    "typescript",
+    "stackproof"
+  ]
+}

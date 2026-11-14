@@ -1,0 +1,43 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>A CLAUDE.md for Drupal 11 projects that actually matches your repo</title><link rel="stylesheet" href="../style.css"></head><body><p><a href="../index.html">← Stackproof</a></p><h1>A CLAUDE.md for Drupal 11 projects that actually matches your repo</h1><p>Most project instructions for coding agents are copied from a template. The commands in them often don&#x27;t exist in your repo, so the agent runs them, fails, and guesses. For Drupal this is worse than usual, because &quot;a Drupal project&quot; can mean three very different things: a full site, a single contrib module, or a distribution. This post shows how to write a <code>CLAUDE.md</code> (or <code>AGENTS.md</code>) by reading the repository first, using two real public repos:</p>
+<ul>
+<li><a href="https://github.com/localgovdrupal/localgov_directories">localgovdrupal/localgov_directories</a>, a contrib module</li>
+<li><a href="https://github.com/drupal/cms">drupal/cms</a>, the Drupal CMS project template (branch <code>2.2.x</code>)</li>
+</ul>
+<h2>Step 1: find out what kind of repo it is</h2>
+<pre>
+grep -n &#x27;&quot;type&quot;&#x27; composer.json
+ls -a | head -40
+</pre>
+<p>In <code>localgov_directories</code>, <code>composer.json</code> says <code>&quot;type&quot;: &quot;drupal-module&quot;</code> and the root holds <code>localgov_directories.info.yml</code>. There is no <code>web/</code> directory, no <code>vendor/</code>, no Drush. In <code>drupal/cms</code> there is a <code>.ddev/</code> directory, a <code>web</code> docroot setting in <code>.ddev/config.yaml</code>, and <code>drush/drush</code> in <code>composer.json</code>.</p>
+<p>That one check changes every command you write. A module repo cannot run its own tests: they need a full Drupal codebase around the module. If your instructions say <code>vendor/bin/phpunit -c web/core ...</code> for a module repo, the agent will fail on the first try.</p>
+<h2>Step 2: find the command runner</h2>
+<p>Don&#x27;t assume DDEV. The <code>drupal/cms</code> <code>AGENTS.md</code> makes this explicit: check for a <code>.ddev/</code> directory <em>and</em> <code>ddev</code> on the <code>PATH</code>; otherwise fall back to local Composer, and use <code>vendor/bin/drush</code> only if it exists. Steal that idea:</p>
+<pre>
+ls -d .ddev 2&gt;/dev/null
+command -v ddev
+test -x vendor/bin/drush &amp;&amp; echo &quot;project drush&quot;
+</pre>
+<p>Then write the commands with the right prefix once, instead of leaving the agent to decide each time.</p>
+<h2>Step 3: list only commands you can point at</h2>
+<p>Every command in the file should come from somewhere you can name: a <code>composer.json</code> script, the DDEV config, the CI workflow, or the official docs. For Drupal the commands that matter are small in number:</p>
+<ul>
+<li>Rebuild caches: <code>drush cache:rebuild</code> (<a href="https://www.drush.org/13.x/commands/cache_rebuild/">docs</a>)</li>
+<li>Apply database updates: <code>drush updatedb</code></li>
+<li>See config differences between the database and the sync directory: <code>drush config:status</code> (<a href="https://www.drush.org/13.x/commands/config_status/">docs</a>)</li>
+<li>Preview a config import as a diff: <code>drush config:import --diff</code> (<a href="https://www.drush.org/13.x/commands/config_import/">docs</a>)</li>
+<li>Run one PHPUnit test from a site root: <code>vendor/bin/phpunit -c web/core path/to/Test.php</code> (<a href="https://www.drupal.org/docs/develop/automated-testing/phpunit-in-drupal">docs</a>)</li>
+</ul>
+<p>Notice what is <em>not</em> on the list: <code>drush config:import --yes</code>. The <code>drupal/cms</code> agent file lists it as a normal workflow, which is reasonable for a fresh local site. On a site with real active config, the <code>--yes</code> flag applies the import without asking, so in your own file you may want &quot;show the diff first&quot; instead.</p>
+<p>In the module repo, CI runs the tests through a shared workflow that installs the module at <code>web/modules/contrib/localgov_directories</code> inside a full site. So the honest instruction there is one sentence: &quot;tests run inside a full Drupal site; the module path is <code>web/modules/contrib/localgov_directories</code>&quot;, not a made-up local command.</p>
+<h2>Step 4: write the guardrails in plain words</h2>
+<p>The part agents most need is what <em>not</em> to touch. A short list works better than a long one:</p>
+<ul>
+<li>Never edit Drupal core or contributed projects in place; patch through Composer or write a custom module.</li>
+<li>Custom code lives in <code>web/modules/custom</code> and <code>web/themes/custom</code>.</li>
+<li>Never commit <code>vendor/</code>, <code>settings.local.php</code>, <code>.env</code>, or uploaded files under <code>web/sites/*/files</code>.</li>
+</ul>
+<p>The <code>drupal/cms</code> file has this section too, and it is the most reusable part of it.</p>
+<h2>Step 5: keep what&#x27;s already there</h2>
+<p>If a <code>CLAUDE.md</code> or <code>AGENTS.md</code> exists, add a clearly marked section instead of rewriting it. Other people (and other tools) rely on the original lines.</p>
+<h2>Check your file</h2>
+<p>Ask three questions of every line: where does this command come from, does it work from this directory, and what happens if it is wrong? If you can&#x27;t answer the first, delete the line. A shorter file made of true statements beats a long one the agent has to second-guess.</p><p>Free lite kit for Drupal 11: <a href="https://github.com/beingRealFrank/stackproof">github.com/beingRealFrank/stackproof</a></p></body></html>
