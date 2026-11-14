@@ -10,6 +10,11 @@
       "name": "drupal11-kit-lite",
       "source": "./plugins/drupal11-kit-lite",
       "description": "Free Drupal 11 starter for Claude Code: an init skill, a module scaffold skill, a reviewer subagent and a guard hook."
+    },
+    {
+      "name": "nextjs-supabase-kit-lite",
+      "source": "./plugins/nextjs-supabase-kit-lite",
+      "description": "Free Next.js + Supabase starter for Claude Code: an init skill, an RLS policy skill, a reviewer subagent and a guard hook."
     }
   ]
 }
