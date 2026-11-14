@@ -1,0 +1,78 @@
+{
+ "bash_block": [
+  {
+   "re": "git\\s+push\\b.*(\\s-f\\b|--force(?!-with-lease))",
+   "why": "force-pushing rewrites shared history."
+  },
+  {
+   "re": "git\\s+(commit|push|merge)\\b.*--no-verify",
+   "why": "--no-verify skips the project's own checks."
+  },
+  {
+   "re": "\\brm\\s+-\\S*r\\S*\\s+(/|~/?|\\$HOME/?)(\\s|$)",
+   "why": "this deletes a root or home directory."
+  },
+  {
+   "re": "(curl|wget)\\b[^|;&]*\\|\\s*(sudo\\s+)?(ba|z)?sh\\b",
+   "why": "piping a downloaded script into a shell runs unreviewed code."
+  },
+  {
+   "re": "git\\s+reset\\s+--hard\\s+(origin|upstream)/",
+   "why": "this discards local commits and changes."
+  },
+  {
+   "re": "drush\\s+(@\\S+\\s+)?(sql:drop|sql-drop|site:install|site-install|si)\\b",
+   "why": "this wipes the site database."
+  },
+  {
+   "re": "drush\\s+@\\S*(prod|live)\\S*",
+   "why": "this targets a production alias from a coding session."
+  },
+  {
+   "re": "drush\\s+(@\\S+\\s+)?(config:import|cim)\\b.*(\\s-y\\b|--yes)",
+   "why": "importing config with -y overwrites active config without review; run drush config:status and show the diff first."
+  },
+  {
+   "re": "composer\\s+update(\\s+-\\S+)*\\s*($|[;&|])",
+   "why": "an unscoped composer update upgrades every package; name the packages, for example composer update drupal/core-recommended -W."
+  }
+ ],
+ "path_block": [
+  {
+   "globs": [
+    "web/core/*",
+    "core/*",
+    "docroot/core/*"
+   ],
+   "why": "Drupal core is managed by Composer; use a patch (cweagans/composer-patches) or a custom module."
+  },
+  {
+   "globs": [
+    "vendor/*",
+    "web/modules/contrib/*",
+    "web/themes/contrib/*",
+    "web/profiles/contrib/*",
+    "modules/contrib/*",
+    "docroot/modules/contrib/*"
+   ],
+   "why": "contrib code is managed by Composer; use a patch."
+  },
+  {
+   "globs": [
+    "web/sites/*/settings.php",
+    "sites/*/settings.php",
+    "docroot/sites/*/settings.php"
+   ],
+   "why": "settings.php holds credentials and environment config; ask the user."
+  },
+  {
+   "globs": [
+    "web/sites/*/files/*",
+    "sites/*/files/*"
+   ],
+   "why": "these are user-uploaded files."
+  }
+ ],
+ "content_block": [],
+ "format": []
+}

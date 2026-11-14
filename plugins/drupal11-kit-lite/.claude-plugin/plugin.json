@@ -1,0 +1,19 @@
+{
+  "name": "drupal11-kit-lite",
+  "displayName": "Stackproof Drupal 11 kit (lite)",
+  "version": "1.0.0",
+  "description": "Free Drupal 11 starter for Claude Code: an init skill, a module scaffold skill, a reviewer subagent and a guard hook.",
+  "author": {
+    "name": "Frank Gilroy",
+    "email": "frankjgilroy+stackproof@gmail.com",
+    "url": "https://beingrealfrank.github.io/stackproof/"
+  },
+  "homepage": "https://github.com/beingRealFrank/stackproof",
+  "license": "MIT",
+  "keywords": [
+    "drupal",
+    "drupal11",
+    "php",
+    "stackproof"
+  ]
+}

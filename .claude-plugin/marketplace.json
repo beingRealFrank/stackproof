@@ -1,0 +1,15 @@
+{
+  "name": "stackproof",
+  "description": "Free lite Claude Code kits from Stackproof",
+  "owner": {
+    "name": "Frank Gilroy",
+    "email": "frankjgilroy+stackproof@gmail.com"
+  },
+  "plugins": [
+    {
+      "name": "drupal11-kit-lite",
+      "source": "./plugins/drupal11-kit-lite",
+      "description": "Free Drupal 11 starter for Claude Code: an init skill, a module scaffold skill, a reviewer subagent and a guard hook."
+    }
+  ]
+}
