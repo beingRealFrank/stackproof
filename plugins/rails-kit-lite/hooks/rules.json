@@ -1,0 +1,72 @@
+{
+ "bash_block": [
+  {
+   "re": "git\\s+push\\b.*(\\s-f\\b|--force(?!-with-lease))",
+   "why": "force-pushing rewrites shared history."
+  },
+  {
+   "re": "git\\s+(commit|push|merge)\\b.*--no-verify",
+   "why": "--no-verify skips the project's own checks."
+  },
+  {
+   "re": "\\brm\\s+-\\S*r\\S*\\s+(/|~/?|\\$HOME/?)(\\s|$)",
+   "why": "this deletes a root or home directory."
+  },
+  {
+   "re": "(curl|wget)\\b[^|;&]*\\|\\s*(sudo\\s+)?(ba|z)?sh\\b",
+   "why": "piping a downloaded script into a shell runs unreviewed code."
+  },
+  {
+   "re": "git\\s+reset\\s+--hard\\s+(origin|upstream)/",
+   "why": "this discards local commits and changes."
+  },
+  {
+   "re": "\\b(rails|rake)\\s+db:(drop|reset|schema:load|truncate_all|purge|setup)\\b",
+   "unless": "RAILS_ENV=test\\b",
+   "why": "this destroys database data; run it only with RAILS_ENV=test, or ask the user."
+  },
+  {
+   "re": "RAILS_ENV=production|\\s-e\\s+production\\b|--environment[= ]production",
+   "why": "this targets production from a coding session."
+  },
+  {
+   "re": "\\brails\\s+credentials:(edit|show)\\b",
+   "why": "this reveals or edits encrypted secrets."
+  }
+ ],
+ "path_block": [
+  {
+   "globs": [
+    "db/schema.rb",
+    "db/structure.sql",
+    "db/*_schema.rb"
+   ],
+   "why": "this file is generated from migrations; write a migration and run bin/rails db:migrate."
+  },
+  {
+   "globs": [
+    "config/master.key",
+    "config/credentials/*.key",
+    "config/credentials.yml.enc",
+    "config/credentials/*.yml.enc"
+   ],
+   "why": "secret material; ask the user."
+  },
+  {
+   "globs": [
+    "db/migrate/*.rb"
+   ],
+   "only_if_tracked": true,
+   "why": "this migration is committed and may have run elsewhere; write a new migration."
+  },
+  {
+   "globs": [
+    "vendor/*",
+    "node_modules/*"
+   ],
+   "why": "third-party code."
+  }
+ ],
+ "content_block": [],
+ "format": []
+}

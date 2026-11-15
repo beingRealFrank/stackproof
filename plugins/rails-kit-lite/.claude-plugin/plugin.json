@@ -1,0 +1,19 @@
+{
+  "name": "rails-kit-lite",
+  "displayName": "Stackproof Ruby on Rails kit (lite)",
+  "version": "1.0.0",
+  "description": "Free Rails starter for Claude Code: an init skill, a migration skill, a reviewer subagent and a guard hook.",
+  "author": {
+    "name": "Frank Gilroy",
+    "email": "frankjgilroy+stackproof@gmail.com",
+    "url": "https://beingrealfrank.github.io/stackproof/"
+  },
+  "homepage": "https://github.com/beingRealFrank/stackproof",
+  "license": "MIT",
+  "keywords": [
+    "rails",
+    "ruby",
+    "rspec",
+    "stackproof"
+  ]
+}

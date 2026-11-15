@@ -8,6 +8,7 @@ Claude Code kits for Drupal 11, Next.js + Supabase, Rails and Django, each teste
 /plugin marketplace add beingRealFrank/stackproof
 /plugin install drupal11-kit-lite@stackproof
 /plugin install nextjs-supabase-kit-lite@stackproof
+/plugin install rails-kit-lite@stackproof
 ```
 
 ## Lite versus full kit
@@ -29,6 +30,7 @@ Full kits: https://beingrealfrank.github.io/stackproof/
 |---|---|---|---|---|---|
 | Drupal 11 | localgov_directories | af3551c | 5/6 | 0.86 | 0.65 |
 | Next.js + Supabase | makerkit-lite | 9ff430d | 6/6 | 1.00 | 0.74 |
+| Ruby on Rails | lobsters | 28bc8d6 | 6/6 | 0.92 | 0.78 |
 
 ## Contributing
 

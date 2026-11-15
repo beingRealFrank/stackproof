@@ -15,6 +15,11 @@
       "name": "nextjs-supabase-kit-lite",
       "source": "./plugins/nextjs-supabase-kit-lite",
       "description": "Free Next.js + Supabase starter for Claude Code: an init skill, an RLS policy skill, a reviewer subagent and a guard hook."
+    },
+    {
+      "name": "rails-kit-lite",
+      "source": "./plugins/rails-kit-lite",
+      "description": "Free Rails starter for Claude Code: an init skill, a migration skill, a reviewer subagent and a guard hook."
     }
   ]
 }
