@@ -1,0 +1,29 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Supabase RLS checklist for tables an AI agent creates</title><meta name="description" content="Eight checks for every table a coding agent adds to a Supabase and Next.js app: RLS on, per-operation policies, auth.uid(), service-role key, migrations and tests."><link rel="stylesheet" href="../style.css"></head><body><p><a href="../index.html">← Stackproof</a></p><h1>Supabase RLS checklist for tables an AI agent creates</h1><p>Row level security (RLS) is what keeps one user's rows away from another in a Supabase app. When a coding agent creates a table, it usually writes the columns and forgets the policies, and a table without RLS in an exposed schema can be read and written by anyone holding your public anon key. This checklist is what to verify on every table an agent adds. The example is from the public <a href="https://github.com/makerkit/nextjs-saas-starter-kit-lite">makerkit/nextjs-saas-starter-kit-lite</a> repository at commit <code>9ff430d</code>.</p>
+<h2>1. Turn RLS on for every new table</h2>
+<p>Creating a table does not enable RLS. In the MakerKit schema file <code>apps/web/supabase/migrations/20241219010757_schema.sql</code> the accounts table is protected like this:</p>
+<pre>alter table "public"."accounts"
+    enable row level security;</pre>
+<p>Make this the first statement after every <code>create table</code> in the public schema. The <a href="https://supabase.com/docs/guides/database/postgres/row-level-security">Supabase RLS guide</a> explains what happens to a table without it.</p>
+<h2>2. Write one policy per operation, scoped to a role</h2>
+<p>With RLS on and no policies, nobody can read or write. Add a policy for each of select, insert, update and delete that the app needs. MakerKit's read policy:</p>
+<pre>create policy accounts_read on public.accounts for
+    select
+    to authenticated using (
+        (select auth.uid()) = id
+    );</pre>
+<p>Note three things: the policy names its role (<code>to authenticated</code>), it is specific to one operation, and it compares the row to the signed-in user. The update policy repeats the condition in both <code>using</code> and <code>with check</code>, so a user cannot change a row so that it no longer belongs to them.</p>
+<h2>3. Wrap <code>auth.uid()</code> in a select</h2>
+<p>MakerKit writes <code>(select auth.uid())</code>, not bare <code>auth.uid()</code>. Supabase recommends the wrapped form because Postgres can then evaluate it once per query instead of once per row.</p>
+<h2>4. Reject <code>using (true)</code> on anything that writes</h2>
+<p>A policy that is always true on insert, update or delete means every signed-in user can write every row. Search for it: <code>grep -rn "using (true)" supabase/migrations</code>. Read-everything policies can be correct for genuinely public data, but they should be a deliberate choice.</p>
+<h2>5. Keep the service-role key on the server</h2>
+<p>The service-role key bypasses RLS. It must never appear in a variable that starts with <code>NEXT_PUBLIC_</code>, in a <code>"use client"</code> file, or in anything sent to the browser. Check: <code>grep -rn "SERVICE_ROLE" apps/web --include=*.ts --include=*.tsx</code>.</p>
+<h2>6. Change the schema with a migration, not by editing an old one</h2>
+<p>Create it with <code>supabase migration new add_notes_table</code>, which writes a timestamped file under <code>supabase/migrations/</code>, and never edit a migration that is already committed. Test locally with <code>supabase db reset</code>, and push to a hosted project only deliberately; an agent that "cleans up" with <code>supabase db push</code> against production is a bad day.</p>
+<h2>7. Test the policies</h2>
+<p><code>supabase test db</code> runs pgTAP tests in <code>supabase/tests/</code>. Write one test that a second user cannot read the first user's row. See the <a href="https://supabase.com/docs/guides/local-development/testing/overview">Supabase testing guide</a>.</p>
+<h2>8. On the server, ask Supabase who the user is</h2>
+<p>In Server Actions and Route Handlers use <code>supabase.auth.getUser()</code>, which validates the token with the auth server, rather than <code>getSession()</code>, which only reads the cookie. See the <a href="https://supabase.com/docs/guides/auth/server-side/nextjs">Supabase Next.js server-side auth guide</a>.</p>
+<h2>Make it enforceable</h2>
+<p>Add the checklist to <code>CLAUDE.md</code>, and back it with hooks: a guard that blocks edits to committed migrations and commands such as <code>supabase db push</code> run from a coding session. The Stackproof Next.js + Supabase kit ships those guards, with skills for RLS policies, migrations, server-side auth, Server Actions and type generation, and an RLS-auditor subagent.</p>
+<p><a href="../kits/nextjs-supabase.html">The Next.js + Supabase kit</a> · <a href="https://github.com/beingRealFrank/stackproof">Free lite kit</a></p></body></html>

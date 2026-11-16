@@ -1,0 +1,26 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Stop Claude Code from editing db/schema.rb</title><meta name="description" content="Why a coding agent must never hand-edit db/schema.rb in a Rails app, what to do instead, and how to enforce it with a hook. Examples from Lobsters."><link rel="stylesheet" href="../style.css"></head><body><p><a href="../index.html">← Stackproof</a></p><h1>Stop Claude Code from editing db/schema.rb</h1><p>Every Rails app has a <code>db/schema.rb</code>, and every coding agent is tempted to edit it. Add a column, tweak an index, fix a default: the file is right there, and editing it looks like the fastest route. It is the wrong one. This guide explains why, what to do instead, and how to make the rule stick. Examples come from the public <a href="https://github.com/lobsters/lobsters">lobsters/lobsters</a> repository at commit <code>28bc8d6</code>.</p>
+<h2>What the file says about itself</h2>
+<p>The first lines of Lobsters' <code>db/schema.rb</code> read:</p>
+<pre># This file is auto-generated from the current state of the database. Instead
+# of editing this file, please use the migrations feature of Active Record to
+# incrementally modify your database, and then regenerate this schema definition.</pre>
+<p>The schema file is output, not input. Rails rewrites it from the live database each time you run migrations, so a manual edit is either overwritten at the next <code>bin/rails db:migrate</code> or, worse, it makes the file disagree with the migrations that produced the database. A fresh checkout that loads the schema (<code>bin/rails db:schema:load</code>) then differs from a database that was migrated step by step.</p>
+<h2>What to do instead</h2>
+<ol>
+<li><strong>Generate a migration.</strong> <code>bin/rails generate migration AddPinnedAtToStories pinned_at:datetime:index</code> writes a new file under <code>db/migrate/</code> (Lobsters has 23 files there, the newest <code>20261110163956_remove_cascade_from_foreign_keys.rb</code>).</li>
+<li><strong>Run it.</strong> <code>bin/rails db:migrate</code> applies the migration and regenerates <code>db/schema.rb</code>.</li>
+<li><strong>Prove it reverses.</strong> <code>bin/rails db:rollback</code> undoes the last step; run <code>bin/rails db:migrate</code> again.</li>
+<li><strong>Commit both files together:</strong> the new migration and the regenerated schema.</li>
+</ol>
+<p>The <a href="https://guides.rubyonrails.org/active_record_migrations.html">Active Record Migrations guide</a> covers the generator names (<code>AddXToY</code>, <code>RemoveXFromY</code>, <code>CreateZs</code>) and reversible migrations.</p>
+<h2>Related files an agent should leave alone</h2>
+<ul>
+<li><strong>Committed migrations.</strong> A migration that is already in git may have run on other machines. Fix mistakes with a new migration. Check with <code>git ls-files db/migrate/&lt;file&gt;</code>.</li>
+<li><strong><code>db/structure.sql</code></strong>, the SQL form of the schema, which apps use instead of <code>schema.rb</code> when they need database-specific features. Same rule.</li>
+<li><strong><code>config/master.key</code> and encrypted credentials.</strong> Secrets; an agent has no reason to read them.</li>
+</ul>
+<h2>Commands that destroy data</h2>
+<p><code>bin/rails db:drop</code>, <code>db:reset</code> and <code>db:schema:load</code> replace or delete the database. They are fine against a test database (<code>RAILS_ENV=test</code>) and dangerous anywhere else. An agent told to "start fresh" should ask first.</p>
+<h2>Put the rule in writing, then enforce it</h2>
+<p>Add one line to your <code>CLAUDE.md</code>: "Never edit <code>db/schema.rb</code>; write a migration and run <code>bin/rails db:migrate</code>." Instructions are advisory, though. Claude Code can run a <code>PreToolUse</code> hook before every edit; a hook that exits with status 2 blocks the call and returns its message to the model. A short script that rejects edits to <code>db/schema.rb</code>, <code>db/structure.sql</code> and tracked files in <code>db/migrate/</code> turns the rule into a guarantee. The Stackproof Rails kit includes such a guard, plus skills for reversible migrations, test-first features, one-line test runs, N+1 hunting and upgrades.</p>
+<p><a href="../kits/rails.html">The Rails kit</a> · <a href="https://github.com/beingRealFrank/stackproof">Free lite kit</a></p></body></html>
