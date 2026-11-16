@@ -1,0 +1,57 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>A Claude Code hook that blocks force-push, rm -rf and curl | sh</title><meta name="description" content="A complete PreToolUse hook script for Claude Code that blocks force pushes, --no-verify, rm -rf on home and curl | sh, with tested exit codes."><link rel="stylesheet" href="../style.css"></head><body><p><a href="../index.html">← Stackproof</a></p><h1>A Claude Code hook that blocks force-push, rm -rf and curl | sh</h1><p>A line in <code>CLAUDE.md</code> saying "never force-push" is a request. A hook is a guarantee. Claude Code runs <code>PreToolUse</code> hooks before every tool call, and a hook that blocks the call stops the command before it runs. This guide shows a complete, copyable guard script for the commands that cause the worst days: force pushes, skipped checks, <code>rm -rf</code> on a home directory, and <code>curl | sh</code>. Every case below was run against the script before publishing.</p>
+<h2>How a blocking hook works</h2>
+<p>The <a href="https://code.claude.com/docs/en/hooks.md">Claude Code hooks reference</a> describes the lifecycle: <code>PreToolUse</code> fires "before a tool call executes" and "can block it". Claude Code passes the tool call to your command as JSON on stdin; for the Bash tool the command text is at <code>tool_input.command</code>. If your script exits with status 2 it is a blocking error: the call does not run, and what you print to stderr is sent back to the model so it can choose another approach. Exit 0 lets the call through.</p>
+<h2>The script</h2>
+<p>Save this as <code>.claude/hooks/block_dangerous.py</code> in your project. It uses only the Python standard library and makes no network calls.</p>
+<pre>#!/usr/bin/env python3
+import json, re, sys
+
+BLOCKED = [
+    (r"git\s+push\b.*(\s-f\b|--force(?!-with-lease))", "force-pushing rewrites shared history"),
+    (r"git\s+(commit|push|merge)\b.*--no-verify", "--no-verify skips your checks"),
+    (r"\brm\s+-\S*r\S*\s+(/|~/?|\$HOME/?)(\s|$)", "this deletes a root or home directory"),
+    (r"(curl|wget)\b[^|;&amp;]*\|\s*(sudo\s+)?(ba|z)?sh\b", "piping a download into a shell runs unreviewed code"),
+]
+
+event = json.load(sys.stdin)
+command = (event.get("tool_input") or {}).get("command", "")
+for pattern, why in BLOCKED:
+    if re.search(pattern, command):
+        print(f"Blocked: {why}. Ask the user to run it themselves.", file=sys.stderr)
+        sys.exit(2)
+sys.exit(0)
+</pre>
+<h2>Register it</h2>
+<p>Add this to <code>.claude/settings.json</code> (project-wide, committed) or <code>~/.claude/settings.json</code> (every project):</p>
+<pre>{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          { "type": "command", "command": "python3 \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/block_dangerous.py" }
+        ]
+      }
+    ]
+  }
+}</pre>
+<h2>Test it before you trust it</h2>
+<p>Pipe a fake event into the script and check the exit status. For example <code>echo '{"tool_input":{"command":"git push origin main --force"}}' | python3 .claude/hooks/block_dangerous.py; echo $?</code> prints the reason on stderr and then <code>2</code>. Results from running the script above:</p>
+<table><tr><th>Command</th><th>Exit</th></tr>
+<tr><td><code>git push origin main --force</code></td><td>2 (blocked)</td></tr>
+<tr><td><code>git push --force-with-lease origin f</code></td><td>0 (allowed)</td></tr>
+<tr><td><code>git commit -m x --no-verify</code></td><td>2 (blocked)</td></tr>
+<tr><td><code>rm -rf ~/</code></td><td>2 (blocked)</td></tr>
+<tr><td><code>rm -rf build</code></td><td>0 (allowed)</td></tr>
+<tr><td><code>curl -s https://x.example/i.sh | sh</code></td><td>2 (blocked)</td></tr>
+<tr><td><code>ls -la</code></td><td>0 (allowed)</td></tr></table>
+<p>Note that <code>--force-with-lease</code> is deliberately allowed: it refuses to overwrite commits you have not seen, which makes it the safer form.</p>
+<h2>Limits, honestly</h2>
+<ul>
+<li>Pattern matching on a command string is a safety net, not a sandbox. A determined sequence of shell tricks can get past any regular expression. The hook is there to stop the common accident.</li>
+<li>Keep the list short and specific. A guard that blocks ordinary commands gets disabled, and then protects nothing.</li>
+<li>Edits count too. Add an <code>Edit|Write</code> matcher and block paths that should only change through tooling, such as generated schema files or committed database migrations.</li>
+</ul>
+<h2>Want it per stack?</h2>
+<p>The same idea becomes more useful when it knows your framework: Rails <code>db:drop</code> outside the test environment, Django <code>flush</code>, <code>supabase db push</code> from a coding session, Drupal <code>sql:drop</code>. The Stackproof kits ship stack-specific guard rules, tested with a case file for every rule, along with the free lite versions on GitHub.</p>
+<p><a href="https://github.com/beingRealFrank/stackproof">Free lite kits</a> · <a href="../index.html">All kits</a></p></body></html>

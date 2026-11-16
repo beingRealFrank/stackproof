@@ -1,0 +1,42 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>A CLAUDE.md for Django projects that matches your repo</title><meta name="description" content="How to write a CLAUDE.md for a Django project by reading the repo first: real versions, the test command CI runs, formatter, type checker and a Never section. Example: Healthchecks."><link rel="stylesheet" href="../style.css"></head><body><p><a href="../index.html">← Stackproof</a></p><h1>A CLAUDE.md for Django projects that matches your repo</h1><p>Most project instructions for coding agents are copied from a template, and the commands in them often do not exist in your repo. For a Django project the agent then runs the wrong test command, forgets the settings it needs, and guesses at the formatter. This guide writes a <code>CLAUDE.md</code> for a Django project by reading the repository first, using the public <a href="https://github.com/healthchecks/healthchecks">healthchecks/healthchecks</a> repository at commit <code>cb5c976</code> as the example.</p>
+<h2>Step 1: read the real versions</h2>
+<pre>ls manage.py requirements*.txt
+grep -n -i "^django" requirements.txt</pre>
+<p>Healthchecks' <code>requirements.txt</code> pins <code>Django[argon2]==6.1.3</code>. Write the version you find, not the version you remember. It decides which features are available (for example, built-in Content Security Policy support arrived in Django 6.0).</p>
+<h2>Step 2: find the test command the project actually runs</h2>
+<p>Look in the README and in the CI workflow rather than assuming <code>pytest</code>:</p>
+<pre>grep -n "manage.py" README.md
+ls .github/workflows; grep -n "manage.py test" .github/workflows/*.yml</pre>
+<p>Healthchecks' README says to run <code>./manage.py test</code>, and its coverage workflow runs <code>coverage run --omit=*/tests/*,*/migrations/* --source=hc manage.py test</code> with a <code>SECRET_KEY</code> environment variable set to a dummy value. Both facts belong in <code>CLAUDE.md</code>: the command, and the environment variable it needs. Django's runner also accepts a dotted path for narrower runs, such as <code>./manage.py test hc.api</code>.</p>
+<h2>Step 3: find the formatter and type checker</h2>
+<pre>cat CONTRIBUTING.md | grep -n -i "ruff\|black"
+cat mypy.ini; grep -n "mypy" .github/workflows/*.yml</pre>
+<p>Healthchecks' CONTRIBUTING.md asks contributors to format Python with ruff, and a separate workflow runs <code>mypy --strict hc</code>. So the file lists <code>ruff format</code> and <code>mypy --strict hc</code>, and nothing about black or flake8.</p>
+<h2>Step 4: record the setup commands</h2>
+<p>The README gives <code>./manage.py migrate</code>, <code>./manage.py createsuperuser</code> and <code>./manage.py runserver</code>. Dependencies come from <code>requirements.txt</code> plus <code>requirements-dev.txt</code>. Settings read environment variables (for example <code>SECRET_KEY</code> and <code>DEBUG</code> in <code>hc/settings.py</code>), and the repo ships <code>hc/local_settings.py.example</code> for local overrides.</p>
+<h2>Step 5: write the Never section</h2>
+<p>This is the part agents need most:</p>
+<ul>
+<li>Never edit a migration that is already committed; add a new one with <code>./manage.py makemigrations</code> (see <a href="django-migrations-agent-rules.html">what an agent must never touch</a>).</li>
+<li>Never read or edit <code>.env</code> files or <code>hc/local_settings.py</code>; never commit secrets.</li>
+<li>Never run <code>./manage.py flush</code> or <code>migrate &lt;app&gt; zero</code>, and never run against production settings.</li>
+</ul>
+<h2>The result</h2>
+<pre>## Project facts
+- Django 6.1.3 (requirements.txt); settings in hc/settings.py, env-driven.
+- Tests: Django runner. Formatter: ruff. Types: mypy --strict.
+
+## Commands
+- Setup: pip install -r requirements.txt -r requirements-dev.txt
+- Migrate: ./manage.py migrate
+- Run: ./manage.py runserver
+- Test all: SECRET_KEY=dummy ./manage.py test
+- Test one app: SECRET_KEY=dummy ./manage.py test hc.api
+- Format: ruff format .   Types: mypy --strict hc
+
+## Never
+- Never edit committed migrations; add one with ./manage.py makemigrations.
+- Never touch .env files or hc/local_settings.py; never commit secrets.
+- Never run ./manage.py flush or migrate &lt;app&gt; zero.</pre>
+<p>Every line has a source you can point to. Delete any line you cannot source; a shorter file made of true statements beats a long one the agent has to second-guess. If a <code>CLAUDE.md</code> or <code>AGENTS.md</code> already exists, add a marked section instead of rewriting it. And read a project's contribution policy before sending it anything: Healthchecks' CONTRIBUTING.md has a policy about AI-assisted pull requests that you should respect.</p>
+<p><a href="../kits/django.html">The Django kit</a> (its <code>init</code> skill does all of this for you) · <a href="https://github.com/beingRealFrank/stackproof">Free lite kit</a></p></body></html>
