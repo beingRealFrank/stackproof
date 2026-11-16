@@ -1,0 +1,39 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Django migrations: what a coding agent must never touch</title><meta name="description" content="Which Django migration files and commands a coding agent must never touch, with real examples from Healthchecks, and what to do instead."><link rel="stylesheet" href="../style.css"></head><body><p><a href="../index.html">← Stackproof</a></p><h1>Django migrations: what a coding agent must never touch</h1><p>A coding agent that edits Django models is usually fine. A coding agent that edits <em>migrations</em> can break every other copy of your database. This guide lists the migration files and commands an agent should never touch, why, and what to do instead. The examples come from the public <a href="https://github.com/healthchecks/healthchecks">healthchecks/healthchecks</a> repository at commit <code>cb5c976</code>, which has 124 files in <code>hc/api/migrations/</code> (the newest is <code>0123_alter_channel_kind.py</code>).</p>
+<h2>1. Never edit a migration that is already committed</h2>
+<p>A migration is a record of something that has already run on other databases: your teammates' laptops, staging, production. Django stores which migrations have been applied in the <code>django_migrations</code> table and never reruns an applied one. If an agent "fixes" <code>0123_alter_channel_kind.py</code> in place, databases that already applied it keep the old schema, while new databases get the edited one. The two drift apart and nothing warns you.</p>
+<p>Check whether a file is committed before changing it:</p>
+<pre>git ls-files hc/api/migrations/0123_alter_channel_kind.py</pre>
+<p>If that prints the path, the file is tracked: leave it alone and add a new migration instead. A migration you generated a minute ago and have not committed can be deleted and regenerated freely.</p>
+<h2>2. Never write migrations by hand when <code>makemigrations</code> can</h2>
+<p>Change the model, then let Django write the file:</p>
+<pre>./manage.py makemigrations api -n check_muted_until</pre>
+<p>Read the generated file. Then prove nothing is missing; this command exits with a non-zero status when model changes have no migration:</p>
+<pre>./manage.py makemigrations --check --dry-run</pre>
+<p>The <a href="https://docs.djangoproject.com/en/6.0/topics/migrations/">migrations documentation</a> describes both flags.</p>
+<h2>3. Never add a one-way <code>RunPython</code></h2>
+<p>A data migration with <code>migrations.RunPython(func)</code> and no second argument cannot be reversed: <code>migrate</code> to an earlier number raises an error. Healthchecks shows both styles. <code>hc/api/migrations/0044_auto_20181120_2004.py</code> uses <code>migrations.RunPython(combine_channel_names)</code> with no reverse, while <code>0048_auto_20190102_0737.py</code> uses <code>migrations.RunPython(remove_anon_checks, migrations.RunPython.noop)</code>. The second form says "undoing this is a no-op", which is explicit and keeps the migration reversible. Always give <code>RunPython</code> a reverse function or <code>RunPython.noop</code>. <code>RunSQL</code> likewise needs <code>reverse_sql</code>. See the <a href="https://docs.djangoproject.com/en/6.0/ref/migration-operations/">migration operations reference</a>.</p>
+<h2>4. Never import your real models inside a migration</h2>
+<p>Inside a data migration, get the historical model with <code>apps.get_model("app", "Model")</code>. Importing the live model class ties an old migration to today's code: when the model later loses a field, the old migration breaks for anyone building a database from scratch.</p>
+<h2>5. Never mix schema changes and data changes in one migration</h2>
+<p>Put a column addition in one migration and the backfill in the next. On databases that run migrations in a transaction, mixing them can fail or hold locks longer than necessary. For a new required column on a large table, add it nullable, backfill in a separate data migration, then tighten it in a third.</p>
+<h2>6. Never run commands that destroy data</h2>
+<p>Three commands an agent should not run on its own, and what to use instead:</p>
+<ul>
+<li><code>./manage.py flush</code> deletes every row in the database. For a clean slate in development, ask the person who owns the database.</li>
+<li><code>./manage.py migrate &lt;app&gt; zero</code> unapplies every migration of an app, which can drop its tables. To undo one change, migrate to the previous number, for example <code>./manage.py migrate api 0122</code>, and then rerun <code>./manage.py migrate</code>.</li>
+<li>Any SQL containing <code>DROP DATABASE</code>, <code>DROP TABLE</code> or <code>DROP SCHEMA</code>.</li>
+</ul>
+<p>Tests are safe: Django's test runner creates its own throwaway database. The Healthchecks README runs them with <code>./manage.py test</code>.</p>
+<h2>7. Never touch files that hold secrets or local state</h2>
+<p>An agent does not need <code>.env</code> files, a machine-local <code>local_settings.py</code>, or a local <code>db.sqlite3</code> to do its job. Healthchecks ships <code>hc/local_settings.py.example</code> for exactly this reason: the real file is yours. Treat generated or third-party directories (<code>staticfiles/</code>, virtualenvs, <code>node_modules/</code>) the same way.</p>
+<h2>A safe loop for any model change</h2>
+<pre>git ls-files &lt;app&gt;/migrations | tail -3   # see what is committed
+./manage.py makemigrations &lt;app&gt;          # generate, then read the file
+./manage.py makemigrations --check --dry-run
+./manage.py migrate
+./manage.py migrate &lt;app&gt; &lt;previous_number&gt;   # prove it reverses
+./manage.py migrate
+./manage.py test &lt;app&gt;</pre>
+<h2>Make the rules enforceable</h2>
+<p>Writing these rules in <code>CLAUDE.md</code> helps, but a hook is stronger: Claude Code runs a <code>PreToolUse</code> hook before every tool call, and a hook that exits with status 2 blocks the call and sends its message back to the model. A small script can refuse edits to tracked files under <code>*/migrations/</code>, and refuse shell commands that match <code>flush</code>, <code>migrate &lt;app&gt; zero</code> or <code>DROP</code>. The Stackproof Django kit ships such a guard, plus skills for migrations, model changes, tests, query performance and deployment checks.</p>
+<p><a href="../kits/django.html">The Django kit</a> · <a href="https://github.com/beingRealFrank/stackproof">Free lite kit</a></p></body></html>
