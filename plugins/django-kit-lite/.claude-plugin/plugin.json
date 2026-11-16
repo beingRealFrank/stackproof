@@ -1,0 +1,18 @@
+{
+  "name": "django-kit-lite",
+  "displayName": "Stackproof Django kit (lite)",
+  "version": "1.0.0",
+  "description": "Free Django starter for Claude Code: an init skill, a migration skill, a reviewer subagent and a guard hook.",
+  "author": {
+    "name": "Frank Gilroy",
+    "email": "frankjgilroy+stackproof@gmail.com",
+    "url": "https://beingrealfrank.github.io/stackproof/"
+  },
+  "homepage": "https://github.com/beingRealFrank/stackproof",
+  "license": "MIT",
+  "keywords": [
+    "django",
+    "python",
+    "stackproof"
+  ]
+}

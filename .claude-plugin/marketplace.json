@@ -20,6 +20,11 @@
       "name": "rails-kit-lite",
       "source": "./plugins/rails-kit-lite",
       "description": "Free Rails starter for Claude Code: an init skill, a migration skill, a reviewer subagent and a guard hook."
+    },
+    {
+      "name": "django-kit-lite",
+      "source": "./plugins/django-kit-lite",
+      "description": "Free Django starter for Claude Code: an init skill, a migration skill, a reviewer subagent and a guard hook."
     }
   ]
 }

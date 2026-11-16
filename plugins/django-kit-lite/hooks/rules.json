@@ -1,0 +1,90 @@
+{
+ "bash_block": [
+  {
+   "re": "git\\s+push\\b.*(\\s-f\\b|--force(?!-with-lease))",
+   "why": "force-pushing rewrites shared history."
+  },
+  {
+   "re": "git\\s+(commit|push|merge)\\b.*--no-verify",
+   "why": "--no-verify skips the project's own checks."
+  },
+  {
+   "re": "\\brm\\s+-\\S*r\\S*\\s+(/|~/?|\\$HOME/?)(\\s|$)",
+   "why": "this deletes a root or home directory."
+  },
+  {
+   "re": "(curl|wget)\\b[^|;&]*\\|\\s*(sudo\\s+)?(ba|z)?sh\\b",
+   "why": "piping a downloaded script into a shell runs unreviewed code."
+  },
+  {
+   "re": "git\\s+reset\\s+--hard\\s+(origin|upstream)/",
+   "why": "this discards local commits and changes."
+  },
+  {
+   "re": "(manage\\.py|django-admin)\\s+(flush|sqlflush)\\b",
+   "why": "flush deletes every row in the database; ask the user."
+  },
+  {
+   "re": "(manage\\.py|django-admin)\\s+migrate\\s+\\S+\\s+zero\\b",
+   "why": "migrating an app to zero unapplies all of its migrations and can drop its tables."
+  },
+  {
+   "re": "\\bDROP\\s+(DATABASE|TABLE|SCHEMA)\\b",
+   "why": "this destroys database data; ask the user."
+  },
+  {
+   "re": "DJANGO_SETTINGS_MODULE=\\S*(prod|production|live)\\b|--settings[= ]\\S*(prod|production|live)\\b",
+   "why": "this runs against production settings from a coding session."
+  }
+ ],
+ "path_block": [
+  {
+   "globs": [
+    "*/migrations/*.py",
+    "migrations/*.py"
+   ],
+   "except": [
+    "*/migrations/__init__.py",
+    "migrations/__init__.py"
+   ],
+   "only_if_tracked": true,
+   "why": "this migration is committed and may have run elsewhere; write a new migration with makemigrations."
+  },
+  {
+   "globs": [
+    ".env",
+    ".env.*",
+    "*/local_settings.py",
+    "local_settings.py",
+    "*.pem",
+    "*.key"
+   ],
+   "except": [
+    ".env.example",
+    ".env.sample",
+    ".env.template"
+   ],
+   "why": "secret or machine-local configuration; ask the user."
+  },
+  {
+   "globs": [
+    "db.sqlite3",
+    "*.sqlite3",
+    "*.sqlite"
+   ],
+   "why": "a local database file; change data through migrations or fixtures."
+  },
+  {
+   "globs": [
+    "staticfiles/*",
+    "venv/*",
+    ".venv/*",
+    "node_modules/*",
+    "site-packages/*"
+   ],
+   "why": "generated or third-party files."
+  }
+ ],
+ "content_block": [],
+ "format": []
+}
