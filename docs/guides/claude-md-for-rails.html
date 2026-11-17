@@ -1,0 +1,39 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>A CLAUDE.md for Rails projects that matches your repo</title><meta name="description" content="Write a CLAUDE.md for a Rails app by reading the repo first: Ruby and Rails versions, the real test and lint commands, and a Never section. Worked example on Mastodon."><link rel="stylesheet" href="../style.css"></head><body><p><a href="../index.html">← Stackproof</a></p><h1>A CLAUDE.md for Rails projects that matches your repo</h1><p>A templated CLAUDE.md for Rails usually says <code>bundle exec rspec</code> and <code>rubocop</code>, and the repo may do neither. The agent then runs the wrong command or guesses at the setup. This guide writes a <code>CLAUDE.md</code> by reading the repository first, using the public <a href="https://github.com/mastodon/mastodon">mastodon/mastodon</a> repository at commit <code>5b74d40</code> as the example.</p>
+<h2>Step 1: read the real versions</h2>
+<pre>cat .ruby-version
+grep -n "gem 'rails'" Gemfile</pre>
+<p>Mastodon's <code>.ruby-version</code> is <code>4.0.9</code> and its Gemfile pins <code>rails ~&gt; 8.1.0</code>. Write what you find, not what you remember: the Rails version decides which APIs and defaults exist.</p>
+<h2>Step 2: find the test command CI actually runs</h2>
+<pre>ls .github/workflows
+grep -n "rspec\|flatware" .github/workflows/test-ruby.yml</pre>
+<p>Mastodon's Ruby test workflow loads the schema with <code>bin/rails db:setup</code> and runs <code>bin/flatware rspec</code> (a parallel runner), with <code>RAILS_ENV=test</code> and Postgres and Redis services. Single files can use <code>bin/rspec</code>, which the same workflow uses for tagged specs (<code>bin/rspec --tag search</code>). A generic <code>bundle exec rspec</code> line would miss the binstubs and the services.</p>
+<h2>Step 3: find the linters</h2>
+<pre>grep -n "rubocop\|brakeman" .github/workflows/lint-ruby.yml
+grep -n '"lint\|"test' package.json</pre>
+<p>The lint workflow runs <code>bin/rubocop</code> and <code>bin/brakeman</code>. The JavaScript side uses <code>yarn</code> (<code>packageManager</code> is <code>yarn@4.18.1</code>), with <code>yarn lint</code> and <code>yarn test</code>. CONTRIBUTING.md lists rspec, vitest, rubocop, eslint and i18n-tasks as the required checks.</p>
+<h2>Step 3b: record the setup commands</h2>
+<p>docs/DEVELOPMENT.md says to run <code>RAILS_ENV=development bin/setup</code> and then <code>bin/dev</code>, which starts the services through overmind or foreman.</p>
+<h2>Step 4: write the Never section</h2>
+<ul>
+<li>Never edit a committed migration in <code>db/migrate</code> or hand-edit <code>db/schema.rb</code>; add a migration and let Rails regenerate the schema (see <a href="stop-claude-code-editing-db-schema-rb.html">stopping an agent editing schema.rb</a>).</li>
+<li>Never read or edit <code>.env*</code> files or commit credentials; Mastodon ships <code>.env.production.sample</code> as the safe reference.</li>
+<li>Never run <code>bin/rails db:drop</code> or <code>db:reset</code> against anything but the test database.</li>
+</ul>
+<h2>The result</h2>
+<pre>## Project facts
+- Ruby 4.0.9 (.ruby-version); Rails 8.1 (Gemfile); Postgres + Redis.
+- Frontend: yarn 4 (package.json). Tests: rspec, vitest.
+
+## Commands
+- Setup: RAILS_ENV=development bin/setup
+- Run: bin/dev
+- Ruby tests: bin/flatware rspec   One file: bin/rspec spec/path_spec.rb
+- JS tests: yarn test
+- Lint: bin/rubocop && bin/brakeman && yarn lint
+
+## Never
+- Never edit committed migrations or hand-edit db/schema.rb.
+- Never touch .env files; never commit secrets.
+- Never run db:drop or db:reset outside the test database.</pre>
+<p>Every line has a source you can point to. Delete any line you cannot source; a shorter file of true statements beats a long one the agent has to second-guess. If a <code>CLAUDE.md</code> already exists, add a marked section rather than rewriting it. Read a project's contribution policy before sending it anything: Mastodon has an AI contribution policy that you should respect.</p>
+<p><a href="../kits/rails.html">The Rails kit</a> (its <code>init</code> skill does all of this for you) · <a href="https://github.com/beingRealFrank/stackproof">Free lite kit</a></p></body></html>
